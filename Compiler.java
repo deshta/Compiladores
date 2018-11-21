@@ -1,26 +1,34 @@
-/*
-Integrantes : 
-Guilherme Moreira Nunes
-Leonardo Machado Decina
-Matheus David Lauar de Souza
-*/
-
 import java.util.*;
  
 class TokenLex {
  
     String Token = "";
     String Lex = "";
+    String Type = "";
+    String Classe = "";
+    String Size = "";
+    String Value = "";
+    String Address = "";
  
     public TokenLex(){
         // contructor vazio
         this.Token = "";
         this.Lex = "";
+        this.Type = "";
+        this.Classe = "";
+        this.Size = "";
+        this.Value = "";
+        this.Address = "";
     }
  
-    public TokenLex(String token, String lex) {
+    public TokenLex(String token, String lex,String type,String classe, String size, String value, String address) {
         this.Token = token;
         this.Lex = lex;
+        this.Type = type;
+        this.Classe = classe;
+        this.Size = size;
+        this.Value = value;
+        this.Address = address;
     }
  
     //Getter & Setters
@@ -31,15 +39,55 @@ class TokenLex {
     public String getLex(){
         return this.Lex;
     }
+
+    public String getType(){
+        return this.Lex;
+    }
+
+    public String getClasse(){
+        return this.Lex;
+    }
+
+    public String getSize(){
+        return this.Lex;
+    }
+
+    public String getValue(){
+        return this.Lex;
+    }
+
+    public String getAddress(){
+        return this.Lex;
+    }
  
     public void setToken(String token){
         this.Token = token;
     }
-   
+
     public void setLex(String lex){
         this.Lex = lex;
     }
-   
+
+    public void setType(String type){
+        this.Type = type;
+    }
+
+    public void setClasse(String classe){
+        this.Classe = classe;
+    }
+
+    public void setSize(String size){
+        this.Size = size;
+    }
+
+    public void setValue(String value){
+        this.Value = value;
+    }
+
+    public void setAddress(String address){
+        this.Address = address;
+    }
+
 }
  
 public class Compiler {
@@ -47,6 +95,8 @@ public class Compiler {
     // Objects
     private static TokenLex TL = new TokenLex();
     private static Scanner sc = new Scanner(System.in);
+    private static TokenLex tempTok = new TokenLex();
+    private static TokenLex tempTok2 = new TokenLex();
  
     // Global variables  
     private static String lexema = readFile();
@@ -59,6 +109,10 @@ public class Compiler {
     public static boolean error = false;
  
     // Conferir os simbolos abaixo com nossa tabela de simbolos
+    private static String[] classe = {"var", "const"};
+	private static String[] type = {"int", "char"};
+	private static String[] size = {};
+	private static String[] address = {};
     private static char[] letter = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','Y','V','W','X','Y','Z'};
     private static char[] digit = {'0','1','2','3','4','5','6','7','8','9'};                                                                                                                     
     private static char[] hex   = {'0','1','2','3','4','5','6','7','8','9','A','B','C','D','E','F'};                                                                                             
@@ -111,6 +165,26 @@ public class Compiler {
             }
         }
         return result;
+    }
+
+    public static TokenLex searchToken(String s, Map<Integer,TokenLex> m){
+        TokenLex result = new TokenLex();
+        for (Map.Entry<Integer, TokenLex> entry : m.entrySet()){
+            if(s.equals(entry.getValue().getLex())){
+                result = entry.getValue();
+            }
+        }
+        return result;
+    }
+	
+    public static boolean isNumeric(String str) {  
+		try{  
+			double d = Double.parseDouble(str);  
+		}  
+		catch(NumberFormatException nfe){  
+			return false;  
+		}  
+		return true;  
     }
  
     // TODO base on each state of the automat
@@ -307,10 +381,7 @@ public class Compiler {
                     break;
                 case 9:
                     // comentario finish
-					if('*'){
-						iterator++;
-						state = 9;
-					}else if(c == '/'){
+                    if(c == '/'){
                         //System.out.println(" >> " + c + " << " + " -- " + state);
                         interator++;
                         tmpLexema = "";
@@ -448,14 +519,30 @@ public class Compiler {
 			//System.out.println(" Entrou D");
             	casaToken("var");
                 casaToken("integer");
-				//System.out.println("casatoken integer");
-                casaToken("id");
+                tmpTok = searchToken(TL.getLex(), alphabet);
+                if(tempTok.getClasse().equals("")){
+                    tempTok.setClasse("var");
+                    tempTok.setType("integer");
+                    //System.out.println("casatoken integer");
+                    casaToken("id");
                 Y();
+                // acao semantica 18
+                }else{
+                    System.out.println("Error : Identificador ja declarado: [" + tempTok.getLex() + "]");
+                }
 				//System.out.println("Saiu Y");
                 while(TL.getToken().equals(",")){
                     casaToken(",");
-                    casaToken("id");
-                    Y();
+                    tempTok = searchToken(TL.getLex(), alphabet);
+                    if(tempTok.getClasse().equals("")){
+                        tempTok.setClasse("var");
+                        tempTok.setType("integer");
+                        casaToken("id");
+                        Y();
+                        // acao semantica 18
+                    }else{
+                    System.out.println("Error: identificador ja declarado: ["+tempTok.getLex()+"]" );
+                    }
                 }
 				//System.out.println("Antes do ;");
                 casaToken(";");
@@ -464,23 +551,52 @@ public class Compiler {
         else if (TL.getToken().equals("char")){
 				//System.out.println("antes do char");
                 casaToken("char");
-				//System.out.println("casou char");
-                casaToken("id");
-                Y();
-                while(TL.getToken().equals(",")){
-                    casaToken(",");
+                //System.out.println("casou char");
+                tempTok = searchToken(TL.getLex(), alphabet);
+                if(tempTok.getClasse().equals("")){
+                    tempTok.setClasse("var");
+                    tempTok.setType("char");
                     casaToken("id");
                     Y();
+                    // acao semantica 18
+                }else{
+                    System.out.println("Error: identificador ja declarado: ["+tempTok.getLex()+"]" );   
+                }
+                while(TL.getToken().equals(",")){
+                    casaToken(",");
+                    tempTok = searchToken(TL.getLex(), alphabet);
+                    if(tempTok.getClasse().equals("")){
+                        tempTok.setClasse("var");
+                        tempTok.setType("char");
+                        casaToken("id");
+                        Y();
+                        // acao semantica 18
+                    }else{
+                        System.out.println("Error: identificador ja declarado: ["+tempTok.getLex()+"]" );   
+                    }
                 }
                 casaToken(";");  
         }else{
-          casaToken("const");
-          casaToken("id");
-          casaToken("=");
-          if(TL.getToken().equals(" - ")){
-              casaToken("-");
-          }
-          casaToken("const");  
+            casaToken("const");
+            tempTok = searchToken(TL.getLex(), alphabet);
+            if(tempTok.getClasse().equals("")){
+                tempTok.setClasse("const");
+                casaToken("id");
+                casaToken("=");
+                if(isNumeric(TL.getLex())){
+                    TL.setType("int");
+                    if(TL.getToken().equals(" - ")){
+                        casaToken("-");
+                    }
+                    casaToken("const");
+                }else{
+                    TL.setType("char");
+                    casaToken("const");
+                }
+            }else{
+                System.out.println("Error: identificador ja declarado: ["+tempTok.getLex()+"]" );
+            }
+
         }
     }
 	
@@ -533,10 +649,32 @@ public class Compiler {
             casaToken("=");
             if(TL.getToken().equals("-")){
                 casaToken("-");
+                sinal = true;
             }
-            casaToken("const");
-        }else if(TL.getToken().equals("[")){
+        }
+        sinal = false;
+        if(isNumeric(TL.getLex())){
+            TL.setType("int");
+        }else{
+            TL.setType("char");
+        }
+        tempTok2 = searchToken(TL.getLex(), alphabet);
+        if(tempTok.getType().equals(tempTok2.getType())){
+            tempTok.setValue(tempTok2.getLex());
+        }
+        casaToken("const");
+        if(TL.getToken().equals("[")){
         casaToken("[");
+        tempTok.setSize(TL.getLex());
+        if(isNumeric(TL.getLex())){
+            if(0 < Integer.parseInt(TL.getLex()) && Integer.parseInt(TL.getLex()) < 2048){
+                tempTok.setSize(TL.getLex());
+            }else{
+                System.out.println("Error: tamanho do vetor excede o máximo permitido");
+            }
+        }else{
+            System.out.println("Error: Tipos incompativeis.");
+        }
         casaToken("const");
         casaToken("]");
         }
